@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorPrimary"
+    tools:context=".MainActivity">
+
+    <Button
+        android:id="@+id/scanButton"
+        android:layout_width="178dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="117dp"
+        android:layout_marginTop="7dp"
+        android:layout_marginEnd="115dp"
+        android:text="@string/Scan" />
+
+    <ListView
+        android:id="@+id/scanListView"
+        android:layout_width="wrap_content"
+        android:layout_height="72dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="59dp"
+        android:layout_marginTop="55dp"
+        android:layout_marginEnd="75dp" />
+
+    <TextView
+        android:id="@+id/statusTextView"
+        android:layout_width="152dp"
+        android:layout_height="53dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="135dp"
+        android:layout_marginTop="137dp"
+        android:layout_marginEnd="124dp"
+        android:text="@string/Status"
+        android:textAlignment="center"
+        android:textSize="20sp" />
+
+    <TextView
+        android:id="@+id/dataReceivedTextView"
+        android:layout_width="112dp"
+        android:layout_height="53dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="157dp"
+        android:layout_marginTop="200dp"
+        android:layout_marginEnd="142dp" />
+
+    <!--  <Button
+        android:id="@+id/sendButton"
+        android:layout_width="124dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="282dp"
+        android:layout_marginEnd="255dp"
+        android:text="Send" />
+
+    <EditText
+        android:id="@+id/sendDataEditText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="92dp"
+        android:layout_marginTop="226dp"
+        android:layout_marginEnd="105dp"
+        android:ems="10"
+        android:hint="Send Data To Controller" /> -->
+
+    <Button
+        android:id="@+id/startButton"
+        android:layout_width="152dp"
+        android:layout_height="65dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="64dp"
+        android:layout_marginTop="401dp"
+        android:layout_marginEnd="195dp"
+        android:text="@string/Start" />
+
+    <EditText
+        android:id="@+id/inputTemperatureEditText"
+        android:layout_width="266dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="80dp"
+        android:layout_marginTop="271dp"
+        android:layout_marginEnd="65dp"
+        android:ems="10"
+        android:hint="@string/Input_the_temperature"
+        android:inputType="phone" />
+
+    <Button
+        android:id="@+id/stopButton"
+        android:layout_width="144dp"
+        android:layout_height="66dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="244dp"
+        android:layout_marginTop="400dp"
+        android:layout_marginEnd="23dp"
+        android:text="@string/Stop" />
+
+    <SeekBar
+        android:id="@+id/keepHeatingSeekBar"
+        android:layout_width="314dp"
+        android:layout_height="29dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="57dp"
+        android:layout_marginTop="330dp"
+        android:layout_marginEnd="40dp" />
+
+    <TextView
+        android:id="@+id/seekBarValueTextView"
+        android:layout_width="106dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="164dp"
+        android:layout_marginTop="370dp"
+        android:layout_marginEnd="141dp"
+        android:text="0 min" />
+
+    <!--android:visibility="invisible"
+    tools:visibility="visible" -->
+</RelativeLayout>

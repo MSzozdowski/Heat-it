@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Heat_Itv2</string>
+    <string name="Scan">Scan</string>
+    <string name="Status">Status</string>
+    <string name="Input_the_temperature">Input the temperature</string>
+    <string name="Start">Start</string>
+    <string name="Stop">Stop</string>
+</resources>
