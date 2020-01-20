@@ -2,23 +2,22 @@ package com.example.heat_itv2;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-
+import androidx.core.app.NotificationCompat;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
+import android.graphics.Color;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Message;
-import android.text.InputType;
-import android.view.MotionEvent;
 import android.view.View;
-import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -27,11 +26,10 @@ import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
@@ -58,7 +56,7 @@ BluetoothMessaging bluetoothMessaging;
 BluetoothDevice[] bluetoothArray;
 BluetoothSocket bluetoothSocket;
 
-
+NotificationCompat.Builder builder=new NotificationCompat.Builder(this).setContentTitle("ALARM");
 
 static final int STATE_CONNECTING = 1;
 static final int STATE_CONNECTED = 2;
@@ -67,7 +65,7 @@ static final int STATE_MESSAGE_RECEIVED = 4;
 
 int REQUEST_ENABLE_BLUETOOTH = 1 ;
 
-private volatile boolean stopThread1=false, stopThread2=false;
+private volatile boolean stopThread1=false, stopThread2=false, toRing=false;
 @Override
 protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -79,6 +77,35 @@ protected void onCreate(Bundle savedInstanceState) {
         startActivityForResult(enableIntent,REQUEST_ENABLE_BLUETOOTH);
     }
     implementListeners();
+
+    Uri alarmSound= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+
+    Intent notificationIntent=new Intent(this,MainActivity.class);
+
+    PendingIntent contentIntent=PendingIntent.getActivity(this,0,notificationIntent,PendingIntent.FLAG_UPDATE_CURRENT);
+
+    builder.setContentIntent(contentIntent);
+    builder.setAutoCancel(true);
+    builder.setLights(Color.BLUE,500,500);
+    long [] pattern={500,500,500,500,500,500,500,500,500};
+    builder.setVibrate(pattern);
+    builder.setSound(alarmSound);
+    builder.setStyle(new NotificationCompat.InboxStyle());
+
+
+    /*BroadcastReceiver myReceiver1 = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            if(toRing){
+                System.out.println("Zagotowane!");
+            }
+            else {
+                System.out.println("Też zagotowane!");
+            }
+
+
+        }
+    };*/
+    //registerReceiver(myReceiver1, new IntentFilter());
    // inputTemperatureEditText.onEditorAction(EditorInfo.IME_ACTION_DONE);
    // closeKeyboard();
 }
@@ -146,6 +173,8 @@ private class BluetoothServices extends Thread{
         }
     }
 }
+
+
 private void findViewByIdes(){
 scanButton = findViewById(R.id.scanButton);
 scanListView = findViewById(R.id.scanListView);
@@ -158,13 +187,14 @@ dataReceivedTextView = findViewById(R.id.dataReceivedTextView);
 startButton = findViewById(R.id.startButton);
 stopButton = findViewById(R.id.stopButton);
 inputTemperatureEditText = findViewById(R.id.inputTemperatureEditText);
-inputTemperatureEditText.setInputType(InputType.TYPE_NULL);
+//inputTemperatureEditText.setInputType(InputType.TYPE_NULL);
 seekBarValueTextView = findViewById(R.id.seekBarValueTextView);
 keepHeatingSeekBar = findViewById(R.id.keepHeatingSeekBar);
 
     }
 
 private void implementListeners() {
+
 scanButton.setOnClickListener(new View.OnClickListener() {
     @Override
     public void onClick(View view) {
@@ -206,7 +236,7 @@ scanButton.setOnClickListener(new View.OnClickListener() {
             statusTextView.setText("Connecting");
         }
     });
-/*    sendButton.setOnClickListener(new View.OnClickListener() {
+/*    sendButton.setOnClickListener(new View.OnClickListener() { // do wyrzucenia
         @Override
         public void onClick(View view) {
             String string = String.valueOf(sendDataEditText.getText());
@@ -258,6 +288,9 @@ scanButton.setOnClickListener(new View.OnClickListener() {
 
         }
     });
+
+
+
     }
 private class BluetoothMessaging extends Thread
 {
@@ -313,6 +346,7 @@ private class BluetoothMessaging extends Thread
       public void run() {
         switch (option) {
             case 1:
+                toRing=false;
                 stopThread1 = false;
                 stopThread2 = true;
                 turnOnHeater();
@@ -327,6 +361,12 @@ private class BluetoothMessaging extends Thread
                     new Thread(runnable).start();
                 }
                 else if(stopThread2){
+                    toRing=true;
+                    //sendBroadcast(new Intent().setAction("Warmed"));
+
+                    NotificationManager manager=(NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+                    manager.notify(1,builder.build());
+
                     stopThread1 = true;
                     stopThread2 = false;
                     HeatingRunnable runnable = new HeatingRunnable(temperatureGoal,2);
@@ -335,6 +375,7 @@ private class BluetoothMessaging extends Thread
                 turnOffHeater();
                 break;
             case 2:
+                toRing=false;
                 stopThread1 = true;
                 stopThread2 = false;
                 while(option == 2 && !stopThread2) {
@@ -343,6 +384,7 @@ private class BluetoothMessaging extends Thread
                 }
                 break;
             case 3:
+                toRing=false;
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
@@ -369,9 +411,15 @@ private class BluetoothMessaging extends Thread
                 });
                 stopThread1=true;
                 stopThread2=false;
+                //sendBroadcast(new Intent().setAction("Kept"));
+
+                NotificationManager manager=(NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+                manager.notify(1,builder.build());
+
                 turnOffHeater();
                 HeatingRunnable runnable = new HeatingRunnable(temperatureGoal,2);
                 new Thread(runnable).start();
+                toRing=true;
                 break;
         }
       }
@@ -439,7 +487,7 @@ private class BluetoothMessaging extends Thread
         String timeLeftFormatted = String.format(Locale.getDefault(),"%02d:%02d",minutes,seconds);
         seekBarValueTextView.setText(timeLeftFormatted);
     }
-  /*  private void closeKeyboard(){
+  /*  private void closeKeyboard(){ //
     View view = this.getCurrentFocus();
     if(view != null){
         InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
