@@ -11,6 +11,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.media.RingtoneManager;
@@ -19,8 +20,8 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Message;
+import android.text.InputType;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -41,8 +42,8 @@ public class MainActivity extends AppCompatActivity {
 
 Button scanButton;
 Button startButton,stopButton;
-ListView scanListView/*=null*/;
-TextView statusTextView,dataReceivedTextView,textView;
+ListView scanListView;
+TextView statusTextView,dataReceivedTextView,textView,heaterStatusTextView;
 EditText inputTemperatureEditText;
 TextView seekBarValueTextView;
 SeekBar keepHeatingSeekBar;
@@ -93,6 +94,7 @@ protected void onCreate(Bundle savedInstanceState) {
     builder.setVibrate(pattern);
     builder.setSound(alarmSound);
     builder.setStyle(new NotificationCompat.InboxStyle());
+
 }
 
 
@@ -102,8 +104,8 @@ protected void onCreate(Bundle savedInstanceState) {
         closeKeyboard();
 
     }
-
-    Handler handler = new Handler(new Handler.Callback() {
+    Handler handler = new Handler();
+   /* Handler handler = new Handler(new Handler.Callback() {
      @Override
      public boolean handleMessage(@NonNull Message message) {
          switch (message.what)
@@ -132,7 +134,7 @@ protected void onCreate(Bundle savedInstanceState) {
          }
          return true;
      }
- });
+ });*/
 private class BluetoothServices extends Thread{
  private BluetoothDevice bluetoothDevice;
 
@@ -149,34 +151,48 @@ private class BluetoothServices extends Thread{
     public void run() {
         try {
             bluetoothSocket.connect();
-            Message message = Message.obtain();
-            message.what=STATE_CONNECTED;
-            handler.sendMessage(message);
+            //Message message = Message.obtain();
+           // message.what=STATE_CONNECTED;
+           // handler.sendMessage(message);
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    statusTextView.setText("Connected");
+                    HeatingRunnable runnable = new HeatingRunnable(returnActualTemp(), 2);
+                    new Thread(runnable).start();
+                }
+            });
         } catch (IOException e) {
             e.printStackTrace();
-            Message message = Message.obtain();
-            message.what=STATE_CONNECTION_FAILED;
-            handler.sendMessage(message);
+           // Message message = Message.obtain();
+           // message.what=STATE_CONNECTION_FAILED;
+            //handler.sendMessage(message);
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    statusTextView.setText("Connection Failed");
+                }
+            });
         }
     }
 }
 
 
+
 private void findViewByIdes(){
 scanButton = findViewById(R.id.scanButton);
-scanListView = findViewById(R.id.scanListView);
-//scanListView = new ListView(this);
+//scanListView = findViewById(R.id.scanListView);
+scanListView = new ListView(this);
 textView=new TextView(this);
 statusTextView = findViewById(R.id.statusTextView);
 dataReceivedTextView = findViewById(R.id.dataReceivedTextView);
 startButton = findViewById(R.id.startButton);
 stopButton = findViewById(R.id.stopButton);
 inputTemperatureEditText = findViewById(R.id.inputTemperatureEditText);
-
-//inputTemperatureEditText.setInputType(InputType.TYPE_NULL);
+inputTemperatureEditText.setInputType(InputType.TYPE_NULL);
 seekBarValueTextView = findViewById(R.id.seekBarValueTextView);
 keepHeatingSeekBar = findViewById(R.id.keepHeatingSeekBar);
-
+heaterStatusTextView = findViewById(R.id.heaterStatus);
     }
 
 private void implementListeners() {
@@ -195,26 +211,23 @@ scanButton.setOnClickListener(new View.OnClickListener() {
                 strings[index] = bluetoothDevice.getName();
                 index++;
             }
-            ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(getApplicationContext()/*MainActivity.this,R.layout.bluetoothdialoglistview,R.id.textView,*/,R.layout.list_row, strings);
+            ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(getApplicationContext(),R.layout.list_row, strings);
             scanListView.setAdapter(arrayAdapter);
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            builder.setCancelable(true);
+            builder.setTitle("Choose your device");
+            builder.setView(scanListView);
+            final AlertDialog dialog = builder.create();
+            dialog.show();
 
     }
-/*
-        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        builder.setCancelable(true);
-        builder.setPositiveButton("CONNECT",null);
-        builder.setView(scanListView);
-        AlertDialog dialog=builder.create();
-        if(textView.getParent()!=null){
-            ((ViewGroup)textView.getParent()).removeView(textView);
-        }
-        dialog.show();*/
     }
 });
 
     scanListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+
             if(bluetoothMessaging==null) {
                 BluetoothServices bluetoothServices = new BluetoothServices(bluetoothArray[i]);
                 bluetoothServices.start();
@@ -223,12 +236,18 @@ scanButton.setOnClickListener(new View.OnClickListener() {
                 statusTextView.setText("Connecting");
             }
             else{
-                Toast.makeText(getApplicationContext(),"You are already connected",Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(),"You are already connected!",Toast.LENGTH_SHORT).show();
         }
         }
     });
 
     seekBarMinute();
+    inputTemperatureEditText.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            inputTemperatureEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
+        }
+    });
     startButton.setOnClickListener(new View.OnClickListener() {
         @Override
         public void onClick(View view) {
@@ -237,7 +256,7 @@ scanButton.setOnClickListener(new View.OnClickListener() {
 
             double checker = Double.valueOf(inputTemp);
             if(checker < lastTemp || checker > 90){
-                Toast.makeText(MainActivity.this,"Input temperature should be between 0 and 90 degrees of Celsius", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this,"Input temperature should be between actual temperature and 90 degrees of Celsius", Toast.LENGTH_LONG).show();
                 inputTemperatureEditText.setText("");
             }else {
                 HeatingRunnable runnable = new HeatingRunnable(checker, 1);
@@ -262,11 +281,14 @@ scanButton.setOnClickListener(new View.OnClickListener() {
                 stopThread2 = false;
                 stopThread1 = true;
                 mTimerRunning = false;
+                seekBarValueTextView.setText("0 min");
+                //timeToKeepWarm=0;
+                keepHeatingSeekBar.setProgress(0);
                 turnOffHeater();
                 HeatingRunnable runnable = new HeatingRunnable(22,2);
                 new Thread(runnable).start();
             }
-            if(!stopThread1){
+           /* if(!stopThread1){
                 System.out.println("!stopThread1");
                 stopThread1 = true;
                 stopThread2 = false;
@@ -274,7 +296,9 @@ scanButton.setOnClickListener(new View.OnClickListener() {
                 turnOffHeater();
                 HeatingRunnable runnable = new HeatingRunnable(22,2);
                 new Thread(runnable).start();
-            }
+            }*/
+
+
         }
     });
 
@@ -289,17 +313,17 @@ private class BluetoothMessaging extends Thread
 
     public BluetoothMessaging(BluetoothSocket socket){
         bluetoothSocket = socket;
-        InputStream tempIn = null;
-        OutputStream tempOut = null;
+        InputStream dataIn = null;
+        OutputStream dataOut = null;
 
         try {
-            tempIn = bluetoothSocket.getInputStream();
-            tempOut = bluetoothSocket.getOutputStream();
+            dataIn = bluetoothSocket.getInputStream();
+            dataOut = bluetoothSocket.getOutputStream();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        inputStream=tempIn;
-        outputStream=tempOut;
+        inputStream=dataIn;
+        outputStream=dataOut;
     }
 
     @Override
@@ -309,9 +333,29 @@ private class BluetoothMessaging extends Thread
         while(true){
             try {
                 bytes = inputStream.read(buffer);
-                handler.obtainMessage(STATE_MESSAGE_RECEIVED, bytes, -1, buffer).sendToTarget();
+                final String getData = new String(buffer,0,bytes);
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            lastTemp = Double.valueOf(getData);
+                            dataReceivedTextView.setText(String.valueOf(lastTemp));
+                        }catch(Exception e)
+                        { }
+                    }
+                });
+
+
+
+                //handler.obtainMessage(STATE_MESSAGE_RECEIVED, bytes, -1, buffer).sendToTarget();
             } catch (IOException e) {
                 e.printStackTrace();
+               /* handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        statusTextView.setText("Connection Failed");
+                    }
+                });*/
             }
         }
     }
@@ -335,6 +379,13 @@ private class BluetoothMessaging extends Thread
       public void run() {
         switch (option) {
             case 1:
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        heaterStatusTextView.setText("Heats");
+                    }
+                });
+
                 stopThread1 = false;
                 stopThread2 = true;
                 turnOnHeater();
@@ -359,6 +410,13 @@ private class BluetoothMessaging extends Thread
                 turnOffHeater();
                 break;
             case 2:
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        heaterStatusTextView.setText("Idle");
+                    }
+                });
+
                 stopThread1 = true;
                 stopThread2 = false;
                 while(option == 2 && !stopThread2) {
@@ -371,6 +429,7 @@ private class BluetoothMessaging extends Thread
                     @Override
                     public void run() {
                         startTimer();
+                        heaterStatusTextView.setText("Keeps temperature");
                         System.out.println("Timer wystarowal");
                     }
                 });
@@ -389,6 +448,9 @@ private class BluetoothMessaging extends Thread
                     @Override
                     public void run() {
                         stopTimer();
+                        seekBarValueTextView.setText("0 min");
+                        timeToKeepWarm=0;
+                        keepHeatingSeekBar.setProgress(0);
                     }
                 });
                 System.out.print("Nie wykona sie");
@@ -441,7 +503,7 @@ private class BluetoothMessaging extends Thread
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
                 seekBarValueTextView.setText(progressValue+" min");
-                timeToKeepWarm=Integer.valueOf(progressValue);
+                 timeToKeepWarm=Integer.valueOf(progressValue);
             }
         });
     }
