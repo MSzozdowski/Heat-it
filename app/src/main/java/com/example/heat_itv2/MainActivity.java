@@ -273,7 +273,7 @@ public class MainActivity extends AppCompatActivity {
                     });
                     while (timeToKeepWarm > 0 && mTimerRunning){
                         try { Thread.sleep(1000); } catch (Exception e) { e.printStackTrace(); }
-                        if(temperatureGoal > actualTemperature){
+                        if(temperatureGoal >  actualTemperature){
                             turnOnHeater();
                         }else {
                             turnOffHeater();
