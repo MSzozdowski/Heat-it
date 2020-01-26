@@ -18,7 +18,6 @@ import android.os.CountDownTimer;
 import android.os.Handler;
 import android.text.InputType;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -58,7 +57,10 @@ public class MainActivity extends AppCompatActivity {
     BluetoothMessaging bluetoothMessaging;
     BluetoothDevice[] bluetoothArray;
     BluetoothSocket bluetoothSocket;
-    NotificationCompat.Builder builder=new NotificationCompat.Builder(this,CHANNEL).setContentTitle("ALARM");
+
+    NotificationCompat.Builder builder=new NotificationCompat.Builder(this,CHANNEL)
+            .setContentTitle("ALARM");
+
     Handler handler = new Handler();
 
     @Override
@@ -75,14 +77,17 @@ public class MainActivity extends AppCompatActivity {
 
     Uri alarmSound= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
     Intent notificationIntent=new Intent(this,MainActivity.class);
-    PendingIntent contentIntent=PendingIntent.getActivity(this,0,notificationIntent,PendingIntent.FLAG_UPDATE_CURRENT);
+    PendingIntent contentIntent=PendingIntent.getActivity(this,
+            0,notificationIntent,PendingIntent.FLAG_UPDATE_CURRENT);
     builder.setContentIntent(contentIntent);
     builder.setAutoCancel(true);
     builder.setLights(Color.BLUE,500,500);
     long [] pattern={500,500,500,500,500,500,500,500,500};
     builder.setVibrate(pattern);
     builder.setSound(alarmSound);
-    builder.setStyle(new NotificationCompat.InboxStyle());
+    builder.setStyle(new NotificationCompat.InboxStyle()
+    .addLine("Your water is ready!")
+    .setBigContentTitle("HeatIt"));
 
     scanDevices();
 
@@ -97,7 +102,6 @@ public class MainActivity extends AppCompatActivity {
     scanButton.setOnClickListener(new View.OnClickListener() {
     @Override
     public void onClick(View view) {
-        //scanDevices();
         if(!statusTextView.getText().toString().equals("Connected")){
             dialog.show();
         }
@@ -132,7 +136,8 @@ public class MainActivity extends AppCompatActivity {
 
         public BluetoothServices(BluetoothDevice device){
             bluetoothDevice = device;
-            try {bluetoothSocket = device.createInsecureRfcommSocketToServiceRecord(myUUID); }catch (IOException e){ e.printStackTrace();}
+            try {bluetoothSocket = device.createInsecureRfcommSocketToServiceRecord(myUUID); }
+            catch (IOException e){ e.printStackTrace();}
         }
 
         public void run() {
@@ -331,23 +336,27 @@ public class MainActivity extends AppCompatActivity {
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String inputTemp = inputTemperatureEditText.getText().toString();
-                try {
-                    double checker = Double.valueOf(inputTemp);
-                    if(checker < lastTemp || checker > 90){
-                        Toast.makeText(MainActivity.this,"Input temperature should be between actual temperature and 90 degrees of Celsius", Toast.LENGTH_LONG).show();
-                        inputTemperatureEditText.setText("");
-                    }else {
-                        HeatingRunnable runnable = new HeatingRunnable(checker, 1);
-                        new Thread(runnable).start();
-                        System.out.println("Ustawiony czas timera na ");
-                        System.out.print(timeToKeepWarm);
+                if (bluetoothSocket != null) {
+                    String inputTemp = inputTemperatureEditText.getText().toString();
+                    try {
+                        double checker = Double.valueOf(inputTemp);
+                        if (checker < lastTemp || checker > 90) {
+                            Toast.makeText(MainActivity.this, "Input temperature should be between actual temperature and 90 degrees of Celsius", Toast.LENGTH_LONG).show();
+                            inputTemperatureEditText.setText("");
+                        } else {
+                            HeatingRunnable runnable = new HeatingRunnable(checker, 1);
+                            new Thread(runnable).start();
+                            System.out.println("Ustawiony czas timera na ");
+                            System.out.print(timeToKeepWarm);
+                            inputTemperatureEditText.setText("");
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Toast.makeText(MainActivity.this, "Invalid input", Toast.LENGTH_SHORT).show();
                         inputTemperatureEditText.setText("");
                     }
-                }catch (Exception e) {
-                    e.printStackTrace();
-                    Toast.makeText(MainActivity.this, "Invalid input", Toast.LENGTH_SHORT).show();
-                    inputTemperatureEditText.setText("");
+                }else {
+                    Toast.makeText(getApplicationContext(),"Connect your device!", Toast.LENGTH_SHORT).show();
                 }
             }
         });
